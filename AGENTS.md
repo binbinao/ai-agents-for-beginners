@@ -90,25 +90,67 @@ Each lesson contains multiple Jupyter notebooks for different frameworks:
 - Free tier available with GitHub account
 - Good for learning and experimentation
 - File pattern: `*-semantic-kernel*.ipynb`
+- Test installation: `python -c "import semantic_kernel; print(semantic_kernel.__version__)"`
 
 **AutoGen + GitHub Models:**
 - Free tier available with GitHub account
 - Multi-agent orchestration capabilities
 - File pattern: `*-autogen.ipynb`
+- Test installation: `python -c "import autogen_agentchat, autogen_core; print('AutoGen versions:', autogen_agentchat.__version__, autogen_core.__version__)"`
 
 **Microsoft Agent Framework (MAF):**
 - Latest framework from Microsoft
 - Available in Python and .NET
-- File pattern: `*-agent-framework.ipynb`
+- File pattern: `*-agent-framework.ipynb` (Python), `*-agent-framework.cs` (.NET)
+- Test installation: `python -c "import agent_framework; print('Agent Framework installed')"`
 
 **Azure AI Agent Service:**
 - Requires Azure subscription
 - Production-ready features
 - File pattern: `*-azureaiagent.ipynb`
+- Test installation: `python -c "import azure_ai_projects, azure_ai_inference; print('Azure AI packages installed')"`
+
+### Framework Version Compatibility
+
+The repository supports these framework versions (as per requirements.txt):
+- `semantic-kernel` with optional Azure and MCP extensions
+- `autogen-agentchat`, `autogen-core`, `autogen-ext` with Azure extensions
+- `agent-framework` (latest Microsoft Agent Framework)
+- `azure-ai-inference`, `azure-ai-projects` for Azure AI services
 
 ## Testing Instructions
 
 This is an educational repository with example code rather than production code with automated tests. To verify your setup and changes:
+
+### Quick Validation Commands
+
+1. **Verify Python environment and dependencies:**
+   ```bash
+   python --version  # Should be 3.12+
+   pip list | grep -E "(autogen|semantic-kernel|azure-ai|agent-framework)"
+   ```
+
+2. **Test framework installations:**
+   ```bash
+   # Test Semantic Kernel
+   python -c "import semantic_kernel; print('✓ Semantic Kernel installed')"
+   
+   # Test AutoGen
+   python -c "import autogen_agentchat, autogen_core; print('✓ AutoGen installed')"
+   
+   # Test Microsoft Agent Framework
+   python -c "import agent_framework; print('✓ Agent Framework installed')"
+   
+   # Test Azure AI packages
+   python -c "import azure_ai_inference, azure_ai_projects; print('✓ Azure AI packages installed')"
+   ```
+
+3. **Verify environment variables:**
+   ```bash
+   python -c "import os; from dotenv import load_dotenv; load_dotenv(); 
+   print('✓ GITHUB_TOKEN' if os.getenv('GITHUB_TOKEN') else '✗ GITHUB_TOKEN missing')
+   print('✓ PROJECT_ENDPOINT' if os.getenv('PROJECT_ENDPOINT') else '✗ PROJECT_ENDPOINT missing')"
+   ```
 
 ### Manual Testing
 
@@ -124,7 +166,19 @@ This is an educational repository with example code rather than production code 
    jupyter nbconvert --to script <lesson-folder>/code_samples/<notebook>.ipynb --stdout | python
    ```
 
-3. **Verify environment variables:**
+3. **Test framework-specific notebooks:**
+   ```bash
+   # Test Semantic Kernel notebook
+   jupyter nbconvert --to script 01-intro-to-ai-agents/code_samples/01-semantic-kernel.ipynb --stdout | python
+   
+   # Test AutoGen notebook
+   jupyter nbconvert --to script 01-intro-to-ai-agents/code_samples/01-autogen.ipynb --stdout | python
+   
+   # Test Agent Framework notebook
+   jupyter nbconvert --to script 01-intro-to-ai-agents/code_samples/01-python-agent-framework.ipynb --stdout | python
+   ```
+
+4. **Verify environment variables:**
    ```bash
    python -c "import os; from dotenv import load_dotenv; load_dotenv(); print('✓ GITHUB_TOKEN' if os.getenv('GITHUB_TOKEN') else '✗ GITHUB_TOKEN missing')"
    ```
@@ -312,6 +366,18 @@ Format: `<lesson-number>-<framework-name>.ipynb`
 - `14-python-agent-framework.ipynb` - Lesson 14, MAF Python
 - `14-dotnet-agent-framework.ipynb` - Lesson 14, MAF .NET
 
+Additional file types found in some lessons:
+- `*-agent-framework.cs` - C#/.NET code samples for Agent Framework
+- `*-agent-framework.md` - Documentation for .NET samples
+- `*-custom.ipynb` - Custom versions with additional features
+- `*-backup.ipynb` - Backup files (should be removed before commits)
+
+Framework-specific file patterns:
+- Semantic Kernel: `*-semantic-kernel*.ipynb`, `*-semantic-kernel-custom.ipynb`
+- AutoGen: `*-autogen.ipynb`
+- Agent Framework: `*-python-agent-framework.ipynb`, `*-dotnet-agent-framework.cs`
+- Azure AI Agent: `*-azureaiagent.ipynb`
+
 ### Special Directories
 
 - `translated_images/` - Localized images for translations
@@ -332,3 +398,98 @@ Key packages from `requirements.txt`:
 - `browser_use` - Browser automation for agents
 - `mcp[cli]` - Model Context Protocol support
 - `mem0ai` - Memory management for agents
+
+## Common Issues and Solutions
+
+### Python Version Compatibility
+
+**Issue:** Package installation failures with Python < 3.12
+```bash
+# Check Python version
+python --version
+# If using wrong version, use python3 explicitly
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+**Issue:** Framework-specific import errors
+```bash
+# Semantic Kernel import issues
+pip install semantic-kernel[azure]  # Install with Azure extensions
+pip install semantic-kernel[mcp]   # Install with MCP extensions
+
+# AutoGen import issues  
+pip install autogen-ext[azure]  # Install with Azure extensions
+
+# Agent Framework issues
+pip install --upgrade agent-framework  # Ensure latest version
+```
+
+### Environment Variable Troubleshooting
+
+**Issue:** GitHub Token not working
+```bash
+# Verify token is set
+python -c "import os; from dotenv import load_dotenv; load_dotenv(); print(os.getenv('GITHUB_TOKEN'))"
+
+# Common token permissions needed: repo, read:org, read:user
+# Create new token at: https://github.com/settings/tokens
+```
+
+**Issue:** Azure AI endpoints not accessible
+```bash
+# Test Azure connection
+python -c "
+from azure.ai.projects import AIProjectClient
+from azure.identity import DefaultAzureCredential
+import os
+from dotenv import load_dotenv
+load_dotenv()
+if os.getenv('PROJECT_ENDPOINT'):
+    client = AIProjectClient.from_connection_string(
+        credential=DefaultAzureCredential(),
+        conn_str=os.environ['PROJECT_ENDPOINT']
+    )
+    print('✓ Azure AI connection successful')
+else:
+    print('✗ PROJECT_ENDPOINT not set')
+"
+```
+
+### Framework-Specific Gotchas
+
+**Semantic Kernel:**
+- Memory connectors require additional setup for certain backends
+- Azure OpenAI integration requires specific deployment name format
+- Some features require optional dependencies installed separately
+
+**AutoGen:**
+- Multi-agent scenarios may require async context management
+- Group chat manager configuration can be sensitive to model compatibility
+- Some AutoGen features require specific model capabilities
+
+**Agent Framework:**
+- .NET samples may require additional SDK installation
+- Python and .NET versions may have feature parity differences
+- Latest features may be in preview and require specific version pinning
+
+### Notebook Execution Issues
+
+**Issue:** Kernel not found in Jupyter
+```bash
+# Register the virtual environment with Jupyter
+python -m ipykernel install --user --name=venv --display-name="Python (venv)"
+jupyter kernelspec list  # Verify kernel is registered
+```
+
+**Issue:** Cell execution timeouts
+```bash
+# Increase notebook timeout in Jupyter config
+jupyter notebook --NotebookApp.iopub_msg_rate_limit=1000 --NotebookApp.iopub_data_rate_limit=10000000
+```
+
+**Issue:** API rate limiting with GitHub Models
+- GitHub Models has rate limits (approximately 60 requests per minute)
+- Implement exponential backoff for production usage
+- Consider switching to Azure AI Foundry for higher throughput
