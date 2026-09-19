@@ -1,3 +1,5 @@
+import os
+
 from setuptools import setup, find_packages
 
 setup(
@@ -14,7 +16,6 @@ setup(
     install_requires=[
         "openai>=1.0.0",
         "python-dotenv>=1.0.0",
-        "asyncio",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
