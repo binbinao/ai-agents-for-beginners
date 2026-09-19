@@ -1,9 +1,0 @@
-LICENSE
-README.md
-model_adapter.py
-setup.py
-model_adapter.egg-info/PKG-INFO
-model_adapter.egg-info/SOURCES.txt
-model_adapter.egg-info/dependency_links.txt
-model_adapter.egg-info/requires.txt
-model_adapter.egg-info/top_level.txt
