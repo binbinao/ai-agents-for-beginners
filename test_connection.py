@@ -5,6 +5,7 @@ Tests connectivity to Tencent Cloud or Deepseek models
 
 import asyncio
 import os
+import sys
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -12,8 +13,6 @@ load_dotenv()
 
 def test_basic_connection():
     """Test basic connection using OpenAI library"""
-    import openai
-    
     # Get configuration from environment
     api_key = os.getenv("OPENAI_API_KEY", os.getenv("GITHUB_TOKEN"))
     endpoint = os.getenv("OPENAI_ENDPOINT", os.getenv("GITHUB_ENDPOINT"))
@@ -31,13 +30,17 @@ def test_basic_connection():
     print(f"  Model: {model_id}")
     print(f"  API Key: {'*' * (len(api_key) - 4) + api_key[-4:] if api_key else 'Not set'}")
     
-    # Configure OpenAI client
-    openai.api_key = api_key
-    openai.base_url = endpoint
-    
     try:
+        # Use an explicit blocking client instead of the module-level
+        # openai.chat.completions accessors. Those work, but only because they share
+        # openai's process-global default client -- this script is a diagnostic, so it
+        # must not depend on (or leave behind) ambient global configuration.
+        from openai import OpenAI
+
+        client = OpenAI(api_key=api_key, base_url=endpoint)
+
         # Test the connection
-        response = openai.chat.completions.create(
+        response = client.chat.completions.create(
             model=model_id,
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
@@ -75,36 +78,44 @@ def test_custom_adapter():
         return False
 
 def test_framework_configs():
-    """Test framework-specific configurations"""
+    """Test framework-specific configurations (no network calls)"""
     try:
         from model_adapter import get_openai_client, get_semantic_kernel_config, get_autogen_config
         
         print("\n--- Testing Framework Configurations ---")
         
+        checks = []
+
         # Test OpenAI client
         try:
             client = get_openai_client()
             print("✅ OpenAI client configuration: OK")
+            checks.append(True)
         except Exception as e:
             print(f"❌ OpenAI client configuration failed: {e}")
+            checks.append(False)
         
         # Test Semantic Kernel config
         try:
             sk_config = get_semantic_kernel_config()
             print(f"✅ Semantic Kernel configuration: OK")
             print(f"   Model: {sk_config.get('model_id', 'Not set')}")
+            checks.append(bool(sk_config.get("model_id")))
         except Exception as e:
             print(f"❌ Semantic Kernel configuration failed: {e}")
+            checks.append(False)
         
         # Test AutoGen config
         try:
             ag_config = get_autogen_config()
             print(f"✅ AutoGen configuration: OK")
             print(f"   Model: {ag_config.get('model', 'Not set')}")
+            checks.append(bool(ag_config.get("model")))
         except Exception as e:
             print(f"❌ AutoGen configuration failed: {e}")
+            checks.append(False)
         
-        return True
+        return all(checks)
         
     except ImportError as e:
         print(f"❌ Could not import framework configs: {e}")
@@ -170,4 +181,4 @@ def main():
     return all_success
 
 if __name__ == "__main__":
-    main()
+    sys.exit(0 if main() else 1)
