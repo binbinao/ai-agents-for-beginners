@@ -1,495 +1,237 @@
 # AGENTS.md
 
-## Project Overview
+Guidance for agents and humans working in this checkout. Upstream project: Microsoft
+[ai-agents-for-beginners](https://github.com/microsoft/ai-agents-for-beginners). This working copy
+also carries a small **local customization layer** that lets the lessons run against
+OpenAI-compatible endpoints (Tencent Cloud Hunyuan / Deepseek) instead of OpenAI or Azure.
+See [§12](#12-本地化改造说明中文章节) for the Chinese notes on that layer.
+
+## 1. What this repository is
+
+An educational course: 16 lesson directories (`00`–`15`), each with a `README.md`, code samples,
+and images. Lessons teach fundamentals, design patterns, frameworks, and production concerns for
+AI agents. There is **no test suite** — the notebooks are the executable artifacts.
+
+Supported stacks in the samples: Semantic Kernel, AutoGen, Microsoft Agent Framework (Python and
+.NET), Azure AI Agent Service, plus MCP and A2A protocol samples.
+
+## 2. Repository layout (verified against this checkout)
+
+| Path | Contents |
+| --- | --- |
+| `00-course-setup/` | Setup guide + Azure Search docs/scripts; no `code_samples/` |
+| `01-intro-to-ai-agents/` … `12-context-engineering/` | `code_samples/` + `images/` |
+| `13-agent-memory/` | Single notebook at lesson root |
+| `14-microsoft-agent-framework/` | `code-samples/` (**hyphen**, not underscore) + `images/` |
+| `15-browser-use/` | Notebook at lesson root + `llms.txt` |
+| `images/`, `translated_images/`, `translations/` | Course art and the auto-translation output (50+ languages) |
+| `model_adapter.py`, `setup.py`, `test_connection.py` | Local customization layer |
+| `CUSTOM_MODEL_INSTRUCTIONS.md` | User-facing Chinese guide for that layer |
+| `slide-deck/` | Local slide-deck project (see §11) |
+
+Sample file naming is **not uniform**. Real patterns found here:
+
+- `<NN>-<framework>.ipynb` — `01-semantic-kernel.ipynb`, `04-autogen.ipynb`, `14-…` in most lessons;
+  frameworks seen: `semantic-kernel`, `python-agent-framework`, `autogen`, `azureaiagent`.
+- Variant suffixes: `-custom` (local model path), `-tool`, `-chromadb`, `-azuresearch`,
+  `-azure-ai-agent`, `-python-aiagent-bookinghotel`.
+- .NET samples are usually `<NN>-dotnet-agent-framework.cs` + a companion `.md`. Lesson 08's
+  `code_samples/workflows-agent-framework/dotNET/` also ships `.ipynb` versions of each sample.
+- Lesson 08 nests deeper and numbers with dots:
+  `code_samples/workflows-agent-framework/{python,dotNET}/01.python-agent-framework-workflow-ghmodel-basic.ipynb`.
+- Lesson 14 numbers by topic instead of framework, e.g. `14-human-loop.ipynb`, `14-middleware.ipynb`,
+  plus a `hotel_booking_workflow_sample.py`.
+- Lesson 15 relies on a separate `browser-use` install path; read its README first.
+
+Do not assume a template from one lesson generalizes to the next — list the directory first.
+
+## 3. Environment setup
+
+Python **3.12+** is required. This checkout currently uses a `uv`-created `.venv` (Python 3.12.13).
 
-This repository contains "AI Agents for Beginners" - a comprehensive educational course teaching everything needed to build AI Agents. The course consists of 15+ lessons covering fundamentals, design patterns, frameworks, and production deployment of AI agents.
-
-**Key Technologies:**
-- Python 3.12+
-- Jupyter Notebooks for interactive learning
-- AI Frameworks: Semantic Kernel, AutoGen, Microsoft Agent Framework (MAF)
-- Azure AI Services: Azure AI Foundry, Azure AI Agent Service
-- GitHub Models Marketplace (free tier available)
-
-**Architecture:**
-- Lesson-based structure (00-15+ directories)
-- Each lesson contains: README documentation, code samples (Jupyter notebooks), and images
-- Multi-language support via automated translation system
-- Multiple framework options per lesson (Semantic Kernel, AutoGen, Azure AI Agent Service)
-
-## Setup Commands
-
-### Prerequisites
-- Python 3.12 or higher
-- GitHub account (for GitHub Models - free tier)
-- Azure subscription (optional, for Azure AI services)
-
-### Initial Setup
-
-1. **Clone or fork the repository:**
-   ```bash
-   gh repo fork microsoft/ai-agents-for-beginners --clone
-   # OR
-   git clone https://github.com/microsoft/ai-agents-for-beginners.git
-   cd ai-agents-for-beginners
-   ```
-
-2. **Create and activate Python virtual environment:**
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Set up environment variables:**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your API keys and endpoints
-   ```
-
-### Required Environment Variables
-
-For **GitHub Models (Free)**:
-- `GITHUB_TOKEN` - Personal access token from GitHub
-
-For **Azure AI Services** (optional):
-- `PROJECT_ENDPOINT` - Azure AI Foundry project endpoint
-- `AZURE_OPENAI_API_KEY` - Azure OpenAI API key
-- `AZURE_OPENAI_ENDPOINT` - Azure OpenAI endpoint URL
-- `AZURE_OPENAI_CHAT_DEPLOYMENT_NAME` - Deployment name for chat model
-- `AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME` - Deployment name for embeddings
-- Additional Azure configuration as shown in `.env.example`
-
-## Development Workflow
-
-### Running Jupyter Notebooks
-
-Each lesson contains multiple Jupyter notebooks for different frameworks:
-
-1. **Start Jupyter:**
-   ```bash
-   jupyter notebook
-   ```
-
-2. **Navigate to a lesson directory** (e.g., `01-intro-to-ai-agents/code_samples/`)
-
-3. **Open and run notebooks:**
-   - `*-semantic-kernel.ipynb` - Using Semantic Kernel framework
-   - `*-autogen.ipynb` - Using AutoGen framework
-   - `*-python-agent-framework.ipynb` - Using Microsoft Agent Framework (Python)
-   - `*-dotnet-agent-framework.ipynb` - Using Microsoft Agent Framework (.NET)
-   - `*-azureaiagent.ipynb` - Using Azure AI Agent Service
-
-### Working with Different Frameworks
-
-**Semantic Kernel + GitHub Models:**
-- Free tier available with GitHub account
-- Good for learning and experimentation
-- File pattern: `*-semantic-kernel*.ipynb`
-- Test installation: `python -c "import semantic_kernel; print(semantic_kernel.__version__)"`
-
-**AutoGen + GitHub Models:**
-- Free tier available with GitHub account
-- Multi-agent orchestration capabilities
-- File pattern: `*-autogen.ipynb`
-- Test installation: `python -c "import autogen_agentchat, autogen_core; print('AutoGen versions:', autogen_agentchat.__version__, autogen_core.__version__)"`
-
-**Microsoft Agent Framework (MAF):**
-- Latest framework from Microsoft
-- Available in Python and .NET
-- File pattern: `*-agent-framework.ipynb` (Python), `*-agent-framework.cs` (.NET)
-- Test installation: `python -c "import agent_framework; print('Agent Framework installed')"`
-
-**Azure AI Agent Service:**
-- Requires Azure subscription
-- Production-ready features
-- File pattern: `*-azureaiagent.ipynb`
-- Test installation: `python -c "import azure_ai_projects, azure_ai_inference; print('Azure AI packages installed')"`
-
-### Framework Version Compatibility
-
-The repository supports these framework versions (as per requirements.txt):
-- `semantic-kernel` with optional Azure and MCP extensions
-- `autogen-agentchat`, `autogen-core`, `autogen-ext` with Azure extensions
-- `agent-framework` (latest Microsoft Agent Framework)
-- `azure-ai-inference`, `azure-ai-projects` for Azure AI services
-
-## Testing Instructions
-
-This is an educational repository with example code rather than production code with automated tests. To verify your setup and changes:
-
-### Quick Validation Commands
-
-1. **Verify Python environment and dependencies:**
-   ```bash
-   python --version  # Should be 3.12+
-   pip list | grep -E "(autogen|semantic-kernel|azure-ai|agent-framework)"
-   ```
-
-2. **Test framework installations:**
-   ```bash
-   # Test Semantic Kernel
-   python -c "import semantic_kernel; print('✓ Semantic Kernel installed')"
-   
-   # Test AutoGen
-   python -c "import autogen_agentchat, autogen_core; print('✓ AutoGen installed')"
-   
-   # Test Microsoft Agent Framework
-   python -c "import agent_framework; print('✓ Agent Framework installed')"
-   
-   # Test Azure AI packages
-   python -c "import azure_ai_inference, azure_ai_projects; print('✓ Azure AI packages installed')"
-   ```
-
-3. **Verify environment variables:**
-   ```bash
-   python -c "import os; from dotenv import load_dotenv; load_dotenv(); 
-   print('✓ GITHUB_TOKEN' if os.getenv('GITHUB_TOKEN') else '✗ GITHUB_TOKEN missing')
-   print('✓ PROJECT_ENDPOINT' if os.getenv('PROJECT_ENDPOINT') else '✗ PROJECT_ENDPOINT missing')"
-   ```
-
-### Manual Testing
-
-1. **Test Python environment:**
-   ```bash
-   python --version  # Should be 3.12+
-   pip list | grep -E "(autogen|semantic-kernel|azure-ai)"
-   ```
-
-2. **Test notebook execution:**
-   ```bash
-   # Convert notebook to script and run (tests imports)
-   jupyter nbconvert --to script <lesson-folder>/code_samples/<notebook>.ipynb --stdout | python
-   ```
-
-3. **Test framework-specific notebooks:**
-   ```bash
-   # Test Semantic Kernel notebook
-   jupyter nbconvert --to script 01-intro-to-ai-agents/code_samples/01-semantic-kernel.ipynb --stdout | python
-   
-   # Test AutoGen notebook
-   jupyter nbconvert --to script 01-intro-to-ai-agents/code_samples/01-autogen.ipynb --stdout | python
-   
-   # Test Agent Framework notebook
-   jupyter nbconvert --to script 01-intro-to-ai-agents/code_samples/01-python-agent-framework.ipynb --stdout | python
-   ```
-
-4. **Verify environment variables:**
-   ```bash
-   python -c "import os; from dotenv import load_dotenv; load_dotenv(); print('✓ GITHUB_TOKEN' if os.getenv('GITHUB_TOKEN') else '✗ GITHUB_TOKEN missing')"
-   ```
-
-### Running Individual Notebooks
-
-Open notebooks in Jupyter and execute cells sequentially. Each notebook is self-contained and includes:
-- Import statements
-- Configuration loading
-- Example agent implementations
-- Expected outputs in markdown cells
-
-## Code Style
-
-### Python Conventions
-
-- **Python Version**: 3.12+
-- **Code Style**: Follow standard Python PEP 8 conventions
-- **Notebooks**: Use clear markdown cells to explain concepts
-- **Imports**: Group by standard library, third-party, local imports
-
-### Jupyter Notebook Conventions
-
-- Include descriptive markdown cells before code cells
-- Add output examples in notebooks for reference
-- Use clear variable names that match lesson concepts
-- Keep notebook execution order linear (cell 1 → 2 → 3...)
-
-### File Organization
-
-```
-<lesson-number>-<lesson-name>/
-├── README.md                     # Lesson documentation
-├── code_samples/
-│   ├── <number>-semantic-kernel.ipynb
-│   ├── <number>-autogen.ipynb
-│   ├── <number>-python-agent-framework.ipynb
-│   └── <number>-azureaiagent.ipynb
-└── images/
-    └── *.png
-```
-
-## Build and Deployment
-
-### Building Documentation
-
-This repository uses Markdown for documentation:
-- README.md files in each lesson folder
-- Main README.md at repository root
-- Automated translation system via GitHub Actions
-
-### CI/CD Pipeline
-
-Located in `.github/workflows/`:
-
-1. **co-op-translator.yml** - Automatic translation to 50+ languages
-2. **welcome-issue.yml** - Welcomes new issue creators
-3. **welcome-pr.yml** - Welcomes new pull request contributors
-
-### Deployment
-
-This is an educational repository - no deployment process. Users:
-1. Fork or clone the repository
-2. Run notebooks locally or in GitHub Codespaces
-3. Learn by modifying and experimenting with examples
-
-## Pull Request Guidelines
-
-### Before Submitting
-
-1. **Test your changes:**
-   - Run affected notebooks completely
-   - Verify all cells execute without errors
-   - Check that outputs are appropriate
-
-2. **Documentation updates:**
-   - Update README.md if adding new concepts
-   - Add comments in notebooks for complex code
-   - Ensure markdown cells explain the purpose
-
-3. **File changes:**
-   - Avoid committing `.env` files (use `.env.example`)
-   - Don't commit `venv/` or `__pycache__/` directories
-   - Keep notebook outputs when they demonstrate concepts
-   - Remove temporary files and backup notebooks (`*-backup.ipynb`)
-
-### PR Title Format
-
-Use descriptive titles:
-- `[Lesson-XX] Add new example for <concept>`
-- `[Fix] Correct typo in lesson-XX README`
-- `[Update] Improve code sample in lesson-XX`
-- `[Docs] Update setup instructions`
-
-### Required Checks
-
-- Notebooks should execute without errors
-- README files should be clear and accurate
-- Follow existing code patterns in the repository
-- Maintain consistency with other lessons
-
-## Additional Notes
-
-### Common Gotchas
-
-1. **Python version mismatch:**
-   - Ensure Python 3.12+ is used
-   - Some packages may not work with older versions
-   - Use `python3 -m venv` to specify Python version explicitly
-
-2. **Environment variables:**
-   - Always create `.env` from `.env.example`
-   - Don't commit `.env` file (it's in `.gitignore`)
-   - GitHub token needs appropriate permissions
-
-3. **Package conflicts:**
-   - Use a fresh virtual environment
-   - Install from `requirements.txt` rather than individual packages
-   - Some notebooks may require additional packages mentioned in their markdown cells
-
-4. **Azure services:**
-   - Azure AI services require active subscription
-   - Some features are region-specific
-   - Free tier limitations apply to GitHub Models
-
-### Learning Path
-
-Recommended progression through lessons:
-1. **00-course-setup** - Start here for environment setup
-2. **01-intro-to-ai-agents** - Understand AI agent fundamentals
-3. **02-explore-agentic-frameworks** - Learn about different frameworks
-4. **03-agentic-design-patterns** - Core design patterns
-5. Continue through numbered lessons sequentially
-
-### Framework Selection
-
-Choose framework based on your goals:
-- **Learning/Prototyping**: Semantic Kernel + GitHub Models (free)
-- **Multi-agent systems**: AutoGen
-- **Latest features**: Microsoft Agent Framework (MAF)
-- **Production deployment**: Azure AI Agent Service
-
-### Getting Help
-
-- Join the [Azure AI Foundry Community Discord](https://aka.ms/ai-agents/discord)
-- Review lesson README files for specific guidance
-- Check the main [README.md](./README.md) for course overview
-- Refer to [Course Setup](./00-course-setup/README.md) for detailed setup instructions
-
-### Contributing
-
-This is an open educational project. Contributions welcome:
-- Improve code examples
-- Fix typos or errors
-- Add clarifying comments
-- Suggest new lesson topics
-- Translate to additional languages
-
-See [GitHub Issues](https://github.com/microsoft/ai-agents-for-beginners/issues) for current needs.
-
-## Project-Specific Context
-
-### Multi-Language Support
-
-This repository uses an automated translation system:
-- 50+ languages supported
-- Translations in `/translations/<lang-code>/` directories
-- GitHub Actions workflow handles translation updates
-- Source files are in English at repository root
-
-### Lesson Structure
-
-Each lesson follows a consistent pattern:
-1. Video thumbnail with link
-2. Written lesson content (README.md)
-3. Code samples in multiple frameworks
-4. Learning objectives and prerequisites
-5. Extra learning resources linked
-
-### Code Sample Naming
-
-Format: `<lesson-number>-<framework-name>.ipynb`
-- `04-semantic-kernel.ipynb` - Lesson 4, Semantic Kernel
-- `07-autogen.ipynb` - Lesson 7, AutoGen
-- `14-python-agent-framework.ipynb` - Lesson 14, MAF Python
-- `14-dotnet-agent-framework.ipynb` - Lesson 14, MAF .NET
-
-Additional file types found in some lessons:
-- `*-agent-framework.cs` - C#/.NET code samples for Agent Framework
-- `*-agent-framework.md` - Documentation for .NET samples
-- `*-custom.ipynb` - Custom versions with additional features
-- `*-backup.ipynb` - Backup files (should be removed before commits)
-
-Framework-specific file patterns:
-- Semantic Kernel: `*-semantic-kernel*.ipynb`, `*-semantic-kernel-custom.ipynb`
-- AutoGen: `*-autogen.ipynb`
-- Agent Framework: `*-python-agent-framework.ipynb`, `*-dotnet-agent-framework.cs`
-- Azure AI Agent: `*-azureaiagent.ipynb`
-
-### Special Directories
-
-- `translated_images/` - Localized images for translations
-- `images/` - Original images for English content
-- `.devcontainer/` - VS Code development container configuration
-- `.github/` - GitHub Actions workflows and templates
-
-### Dependencies
-
-Key packages from `requirements.txt`:
-- `autogen-agentchat`, `autogen-core`, `autogen-ext` - AutoGen framework
-- `semantic-kernel` - Semantic Kernel framework
-- `agent-framework` - Microsoft Agent Framework
-- `azure-ai-inference`, `azure-ai-projects` - Azure AI services
-- `azure-search-documents` - Azure AI Search integration
-- `chromadb` - Vector database for RAG examples
-- `chainlit` - Chat UI framework
-- `browser_use` - Browser automation for agents
-- `mcp[cli]` - Model Context Protocol support
-- `mem0ai` - Memory management for agents
-
-## Common Issues and Solutions
-
-### Python Version Compatibility
-
-**Issue:** Package installation failures with Python < 3.12
 ```bash
-# Check Python version
-python --version
-# If using wrong version, use python3 explicitly
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv .venv            # or: uv venv
+source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env             # then fill in credentials
 ```
 
-**Issue:** Framework-specific import errors
+Known gaps in `requirements.txt` (checked, not folklore):
+
+- **No version pins at all.** Every install floats to latest; expect breakage over time.
+- `jupyter`, `notebook`, `nbconvert`, `nbformat`, `jupyterlab` are **absent**. `ipykernel` is present,
+  so notebooks run from a Jupyter you already have, but `jupyter notebook` and `jupyter nbconvert`
+  both exit `1` in this venv. Install what you need explicitly:
+  `pip install jupyterlab nbconvert`.
+- `setuptools` is **absent from a fresh `uv venv`**, yet `setup.py` needs it. Install it before
+  `pip install -e .`.
+- Packages that earlier revisions of this file claimed were dependencies — `chromadb`, `chainlit`,
+  `browser_use`, `mem0ai` — are **not** in `requirements.txt`. Lesson notebooks pull their own extras.
+
+## 4. Credentials and secrets
+
+- `.env` is gitignored. **Never read, print, or commit it.** Use `.env.example` as the catalog.
+- **Known leak in this repository's history:** `02-explore-agentic-frameworks/code_samples/02-autogen-custom.ipynb`
+  (cell 2) contains a plaintext API key — endpoint `https://api.lkeap.cloud.tencent.com/v1`,
+  model `deepseek-v3-0324` — introduced in commit `c0f4796b`. Treat that key as burned and rotate it
+  at the provider. Leave the notebook untouched unless the task is specifically about it; do not
+  rewrite git history to hide it.
+- New samples must read credentials from the environment, never literals.
+
+## 5. Environment variables
+
+`.env.example` defines 19 names. Three groups matter:
+
+| Group | Variables | Used by |
+| --- | --- | --- |
+| GitHub Models (free tier) | `GITHUB_TOKEN`, `GITHUB_ENDPOINT`, `GITHUB_MODEL_ID` | Framework notebooks |
+| Local OpenAI-compatible | `OPENAI_API_KEY`, `OPENAI_ENDPOINT`, `OPENAI_CHAT_MODEL_ID` | `model_adapter.py`, `test_connection.py`, `*-custom.ipynb` |
+| Azure AI | `PROJECT_ENDPOINT`, `AZURE_OPENAI_*`, `AZURE_SEARCH_*`, `AZURE_AI_AGENT_*`, `AZURE_SUBSCRIPTION_ID`, `GLOBAL_LLM_SERVICE` | Azure lessons |
+
+`GLOBAL_LLM_SERVICE` is the Azure AI Services connection name and is documented in
+`00-course-setup/README.md`. The `.env.example` catalog lists names for the whole course; a given
+lesson may read only a few of them, so verify a variable's real consumer before "cleaning it up".
+
+## 6. Running notebooks
+
 ```bash
-# Semantic Kernel import issues
-pip install semantic-kernel[azure]  # Install with Azure extensions
-pip install semantic-kernel[mcp]   # Install with MCP extensions
-
-# AutoGen import issues  
-pip install autogen-ext[azure]  # Install with Azure extensions
-
-# Agent Framework issues
-pip install --upgrade agent-framework  # Ensure latest version
+source .venv/bin/activate
+python -m ipykernel install --user --name ai-agents-for-beginners \
+       --display-name "Python (ai-agents-for-beginners)"
+jupyter notebook                     # needs `pip install notebook` or jupyterlab
 ```
 
-### Environment Variable Troubleshooting
+- Most notebooks declare `kernelspec.name = "python3"`. 22 notebooks additionally carry a stale
+  committed `display_name` such as `".venv (3.12.11)"` — cosmetic, but it means the committed
+  metadata does not describe your interpreter. Prefer selecting the explicit
+  **Python (ai-agents-for-beginners)** kernel, which pins `.venv/bin/python`.
+- Launch Jupyter from the repository root so `python-dotenv` finds `.env`.
+- Headless smoke test (after installing `nbconvert`):
+  `jupyter nbconvert --to script <lesson>/code_samples/<notebook>.ipynb --stdout | python`
 
-**Issue:** GitHub Token not working
+## 7. Local customization layer
+
+`model_adapter.py` exposes:
+
+- `CustomModelAdapter` — `sync_chat_completion()`, `await chat_completion()`, `test_connection()`;
+  raises at construction when key/endpoint/model are missing.
+- `create_default_adapter()`, `AsyncCustomModelAdapter` (async context manager).
+- `get_openai_client()` (async), `get_sync_openai_client()`, `get_semantic_kernel_config()`,
+  `get_autogen_config()`.
+
+Rules that are easy to get wrong:
+
+- `_resolve_config()` resolves `OPENAI_*` **or** `GITHUB_*`, using `or` fallbacks, so an empty
+  `OPENAI_API_KEY=` correctly falls through to `GITHUB_TOKEN`. Note `test_connection.py` uses
+  `os.getenv(a, os.getenv(b))` instead, which does *not* fall through on an empty value.
+- `openai>=1.0` removed the v0 surface: use `client.chat.completions.create(...)`. The old
+  `openai.chat.completions.acreate` raises `AttributeError`.
+- Assigning `openai.api_key` / `openai.base_url` in `CustomModelAdapter.__init__` is **intentional
+  process-global configuration**, not dead code: module-level `openai.chat.completions` accessors
+  resolve to a shared *blocking* default client that honors those globals. Prefer the explicit
+  clients for new code; see the docstrings before deleting either mechanism.
+- `get_semantic_kernel_config()` returns `model_id`, while `get_autogen_config()` returns `model`
+  and `base_url`. The different key names are deliberate — AutoGen's client expects its own.
+
 ```bash
-# Verify token is set
-python -c "import os; from dotenv import load_dotenv; load_dotenv(); print(os.getenv('GITHUB_TOKEN'))"
-
-# Common token permissions needed: repo, read:org, read:user
-# Create new token at: https://github.com/settings/tokens
+pip install -e .                 # installs the adapter as a package; requires setuptools
+python test_connection.py        # 4 checks; exits 1 if any of them fails
 ```
 
-**Issue:** Azure AI endpoints not accessible
+`CUSTOM_MODEL_INSTRUCTIONS.md` documents the same layer for end users in Chinese. The three
+custom notebooks are `01-…/01-python-agent-framework-custom.ipynb`,
+`01-…/01-semantic-kernel-custom.ipynb`, and `02-…/02-autogen-custom.ipynb`.
+
+## 8. Verification without credentials
+
+There is no test suite; verify what you can offline, then report what you could not check.
+
 ```bash
-# Test Azure connection
-python -c "
-from azure.ai.projects import AIProjectClient
-from azure.identity import DefaultAzureCredential
-import os
-from dotenv import load_dotenv
-load_dotenv()
-if os.getenv('PROJECT_ENDPOINT'):
-    client = AIProjectClient.from_connection_string(
-        credential=DefaultAzureCredential(),
-        conn_str=os.environ['PROJECT_ENDPOINT']
-    )
-    print('✓ Azure AI connection successful')
-else:
-    print('✗ PROJECT_ENDPOINT not set')
-"
+.venv/bin/python -c "import openai, semantic_kernel, agent_framework, autogen_agentchat; print('ok')"
+.venv/bin/python setup.py --name --version          # model_adapter / 1.0.0
+.venv/bin/python -m jupyter kernelspec list
+.venv/bin/python test_connection.py                 # needs a live endpoint; exit code is the signal
 ```
 
-### Framework-Specific Gotchas
+To exercise the adapter without a real provider, point `OPENAI_ENDPOINT` at a local mock that speaks
+`POST /v1/chat/completions` and returns a `chat.completion` object. That is enough to prove both the
+sync and async paths end to end.
 
-**Semantic Kernel:**
-- Memory connectors require additional setup for certain backends
-- Azure OpenAI integration requires specific deployment name format
-- Some features require optional dependencies installed separately
+## 9. Common issues
 
-**AutoGen:**
-- Multi-agent scenarios may require async context management
-- Group chat manager configuration can be sensitive to model compatibility
-- Some AutoGen features require specific model capabilities
+| Symptom | Cause / fix |
+| --- | --- |
+| `ModuleNotFoundError: setuptools` on `pip install -e .` | Fresh `uv venv` ships without it — `pip install setuptools` |
+| `jupyter notebook` / `nbconvert` exit `1` | Not in `requirements.txt` — install explicitly |
+| Kernel "not found" warnings on open | Committed `display_name` (`.venv (3.12.11)`) is stale; select the registered kernel |
+| `.venv/bin/python` missing or broken | A `uv` upgrade can leave dangling interpreter symlinks; recreate the venv |
+| `model_adapter.egg-info/`, `build/`, `dist/` appear | Local packaging output; gitignored since this layer was added |
+| Notebook CLI run fails on imports | Re-run `pip install -r requirements.txt` inside the activated venv |
 
-**Agent Framework:**
-- .NET samples may require additional SDK installation
-- Python and .NET versions may have feature parity differences
-- Latest features may be in preview and require specific version pinning
+Also gitignored and easy to mistake for content: `*-backup.ipynb`,
+`02-explore-agentic-frameworks/code_samples/*.png`, `05-agentic-rag/code_samples/chroma_db/`.
 
-### Notebook Execution Issues
+## 10. Contributing
 
-**Issue:** Kernel not found in Jupyter
-```bash
-# Register the virtual environment with Jupyter
-python -m ipykernel install --user --name=venv --display-name="Python (venv)"
-jupyter kernelspec list  # Verify kernel is registered
-```
+- Upstream is `microsoft/ai-agents-for-beginners`; `translations/` and `translated_images/` are
+  generated by GitHub Actions — never hand-edit them.
+- One logical change per commit, with a message that explains *why*. Run the affected notebook(s)
+  end to end before proposing the change.
+- Do not commit `.env`, virtual environments, `__pycache__/`, or packaging artifacts.
+- PR titles here have used the forms `[Lesson-XX] …`, `[Fix] …`, `[Update] …`, `[Docs] …`.
 
-**Issue:** Cell execution timeouts
-```bash
-# Increase notebook timeout in Jupyter config
-jupyter notebook --NotebookApp.iopub_msg_rate_limit=1000 --NotebookApp.iopub_data_rate_limit=10000000
-```
+## 11. Slide deck project (`slide-deck/`)
 
-**Issue:** API rate limiting with GitHub Models
-- GitHub Models has rate limits (approximately 60 requests per minute)
-- Implement exponential backoff for production usage
-- Consider switching to Azure AI Foundry for higher throughput
+A local, non-upstream addition that renders one handwritten-style deck per lesson chapter.
+
+- `slide-deck/_shared/DESIGN-SYSTEM.md` is the **single source of truth** for style. Every chapter's
+  outline copies its `<STYLE_INSTRUCTIONS>` block verbatim, so changing style means changing that
+  file and regenerating, never editing one chapter's prompts by hand.
+- `slide-deck/_shared/build_prompts.py <chapter-dir>` assembles `prompts/NN-slide-*.md` from
+  `outline.md` + the design system + the `baoyu-slide-deck` skill's base prompt. It backs up any
+  file it overwrites.
+- Never patch rendered text by drawing over a generated bitmap; fix the prompt and regenerate.
+
+## 12. 本地化改造说明（中文章节）
+
+这一节记录本 checkout 相对上游新增的东西，以及踩过的坑。上游内容请只看英文部分。
+
+**目的**：在没有 OpenAI / Azure 访问权限的情况下，用腾讯云混元或 Deepseek 这类 OpenAI 兼容端点
+把课程跑起来。
+
+**新增文件**
+
+| 文件 | 作用 |
+| --- | --- |
+| `model_adapter.py` | 统一适配器：同步 / 异步 chat completion、Semantic Kernel / AutoGen / MAF 三种配置出口 |
+| `test_connection.py` | 四步连通性自检（基础连接 / 适配器 / 框架配置 / 异步），任一项失败即退出码 1 |
+| `setup.py` | 把适配器装成包，便于 notebook `import model_adapter` |
+| `CUSTOM_MODEL_INSTRUCTIONS.md` | 面向使用者的中文配置指南 |
+| `*-custom.ipynb`（3 个） | 01 章的 MAF / Semantic Kernel 与 02 章的 AutoGen 定制版 |
+| `slide-deck/` | 按章生成手写风幻灯片（见第 11 节） |
+
+**已修复的问题（各一个 commit，均有离线验证）**
+
+1. `setup.py` 缺少 `import os`，第 7 行 `os.path.exists` 直接 `NameError`，导致 `pip install -e .`
+   必然失败；顺手删掉误列的 `asyncio`（标准库，不是 PyPI 依赖）。
+2. `model_adapter.py` 用了 openai v0 的 `openai.chat.completions.acreate`，在 openai 1.x/3.x 上抛
+   `AttributeError`；改为 `self.async_client.chat.completions.create`，并补上
+   `_resolve_config()` 让空值能正确回退到 `GITHUB_*`。
+3. `test_connection.py` 无论成败都退出 0，CI 里等于没有信号；现在按结果给退出码，且框架配置检查
+   不再无条件返回 `True`。
+4. 忽略本地打包产物（`*.egg-info/`、`build/`、`dist/`），并把已经误入库的
+   `model_adapter.egg-info/` 从索引里移出。
+5. 删除根目录那个只在包上下文里才成立的 `__init__.py`（`from .model_adapter import ...` 无人引用）。
+
+**必须记住的两件事**
+
+- `02-explore-agentic-frameworks/code_samples/02-autogen-custom.ipynb` 第 2 个单元格里有一把明文
+  密钥（端点是腾讯云知识引擎，模型 `deepseek-v3-0324`，随 commit `c0f4796b` 入库）。**该密钥应视为
+  已泄露，请在腾讯云控制台作废重建**；本仓库不改写历史，也不在无关改动里动这个 notebook。
+- `requirements.txt` 没有任何版本钉，且不含 `jupyter` / `notebook` / `nbconvert` / `jupyterlab`；
+  新环境还要单独装 `setuptools` 才能 `pip install -e .`。
+
+**本地环境现状**：`.venv` 由 `uv` 重建（Python 3.12.13），旧的坏环境已在校验通过后删除；已注册
+用户级 kernel `Python (ai-agents-for-beginners)`。默认从仓库根目录启动 Jupyter，确保 `.env` 能被
+读到。若再次遇到 `uv` 升级后解释器软链断裂，直接删掉 `.venv` 重建即可（重建后需重跑
+`python -m ipykernel install ...`）。
